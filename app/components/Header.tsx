@@ -15,15 +15,20 @@ export default function Header() {
   // Ensure we're rendering the UI after mounting to avoid hydration mismatches
   useEffect(() => {
     setMounted(true);
-    
-    try {
-      // Safely get theme context after mounting
-      const { resolvedTheme, setTheme } = useTheme();
-      setThemeState({ resolvedTheme, setTheme });
-    } catch (error) {
-      console.warn('ThemeProvider not available yet');
-    }
   }, []);
+
+  // Get theme context after component is mounted
+  useEffect(() => {
+    if (mounted) {
+      try {
+        // Safely get theme context after mounting
+        const { resolvedTheme, setTheme } = useTheme();
+        setThemeState({ resolvedTheme, setTheme });
+      } catch (error) {
+        console.warn('ThemeProvider not available yet');
+      }
+    }
+  }, [mounted]);
 
   if (!mounted) {
     return (
@@ -50,7 +55,15 @@ export default function Header() {
           <button
             aria-label={themeState.resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-            onClick={() => themeState.setTheme(themeState.resolvedTheme === 'dark' ? 'light' : 'dark')}
+            onClick={() => {
+              const newTheme = themeState.resolvedTheme === 'dark' ? 'light' : 'dark';
+              themeState.setTheme(newTheme);
+              // Also update localStorage directly to ensure immediate effect
+              localStorage.setItem('theme', newTheme);
+              // Force update DOM for immediate visual feedback
+              document.documentElement.classList.toggle('dark');
+              document.documentElement.style.colorScheme = newTheme;
+            }}
           >
             {themeState.resolvedTheme === 'dark' ? (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
